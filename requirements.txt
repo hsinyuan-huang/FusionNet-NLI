@@ -1,0 +1,5 @@
+numpy
+pandas
+msgpack-python
+spacy
+jsonlines
