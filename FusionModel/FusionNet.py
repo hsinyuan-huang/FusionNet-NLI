@@ -14,38 +14,35 @@ class FusionNet(nn.Module):
         layers.set_my_dropout_prob(opt['my_dropout_p'])
         layers.set_seq_dropout(opt['do_seq_dropout'])
 
-        if opt['use_wemb']:
-            # Word embeddings
-            self.embedding = nn.Embedding(opt['vocab_size'],
-                                          opt['embedding_dim'],
-                                          padding_idx=padding_idx)
-            if embedding is not None:
-                self.embedding.weight.data = embedding
-                if opt['fix_embeddings'] or opt['tune_partial'] == 0:
-                    opt['fix_embeddings'] = True
-                    opt['tune_partial'] = 0
-                    for p in self.embedding.parameters():
-                        p.requires_grad = False
-                else:
-                    assert opt['tune_partial'] < embedding.size(0)
-                    fixed_embedding = embedding[opt['tune_partial']:]
-                    # a persistent buffer for the nn.Module
-                    self.register_buffer('fixed_embedding', fixed_embedding)
-                    self.fixed_embedding = fixed_embedding
-            embedding_dim = opt['embedding_dim']
-            input_size += embedding_dim
-        else:
-            opt['fix_embeddings'] = True
-            opt['tune_partial'] = 0
-        if opt['use_cove']:
-            self.CoVe = layers.MTLSTM(opt, embedding)
-            input_size += self.CoVe.output_size
-        if opt['use_pos']:
-            self.pos_embedding = nn.Embedding(opt['pos_size'], opt['pos_dim'])
-            input_size += opt['pos_dim']
-        if opt['use_ner']:
-            self.ner_embedding = nn.Embedding(opt['ner_size'], opt['ner_dim'])
-            input_size += opt['ner_dim']
+        # Word embeddings
+        self.embedding = nn.Embedding(opt['vocab_size'],
+                                      opt['embedding_dim'],
+                                      padding_idx=padding_idx)
+        if embedding is not None:
+            self.embedding.weight.data = embedding
+            if opt['fix_embeddings'] or opt['tune_partial'] == 0:
+                opt['fix_embeddings'] = True
+                opt['tune_partial'] = 0
+                for p in self.embedding.parameters():
+                    p.requires_grad = False
+            else:
+                assert opt['tune_partial'] < embedding.size(0)
+                fixed_embedding = embedding[opt['tune_partial']:]
+                # a persistent buffer for the nn.Module
+                self.register_buffer('fixed_embedding', fixed_embedding)
+                self.fixed_embedding = fixed_embedding
+        embedding_dim = opt['embedding_dim']
+        input_size += embedding_dim
+        # Contextualized embeddings
+        self.CoVe = layers.MTLSTM(opt, embedding)
+        input_size += self.CoVe.output_size
+        # POS embeddings
+        self.pos_embedding = nn.Embedding(opt['pos_size'], opt['pos_dim'])
+        input_size += opt['pos_dim']
+        # NER embeddings
+        self.ner_embedding = nn.Embedding(opt['ner_size'], opt['ner_dim'])
+        input_size += opt['ner_dim']
+
         if opt['full_att_type'] == 2:
             aux_input = opt['num_features']
         else:
@@ -117,34 +114,38 @@ class FusionNet(nn.Module):
         # Prepare premise and hypothesis input
         Prnn_input_list = []
         Hrnn_input_list = []
-        if self.opt['use_wemb']:
-            # Word embedding for both premise and hypothesis
-            emb = self.embedding if self.training else self.eval_embed
-            x1_emb, x2_emb = emb(x1), emb(x2)
-            # Dropout on embeddings
-            if self.opt['dropout_emb'] > 0:
-                x1_emb = layers.dropout(x1_emb, p=self.opt['dropout_emb'], training=self.training)
-                x2_emb = layers.dropout(x2_emb, p=self.opt['dropout_emb'], training=self.training)
-            Prnn_input_list.append(x1_emb)
-            Hrnn_input_list.append(x2_emb)
-        if self.opt['use_cove']:
-            _, x1_cove = self.CoVe(x1, x1_mask)
-            _, x2_cove = self.CoVe(x2, x2_mask)
-            if self.opt['dropout_emb'] > 0:
-                x1_cove = layers.dropout(x1_cove, p=self.opt['dropout_emb'], training=self.training)
-                x2_cove = layers.dropout(x2_cove, p=self.opt['dropout_emb'], training=self.training)
-            Prnn_input_list.append(x1_cove)
-            Hrnn_input_list.append(x2_cove)
-        if self.opt['use_pos']:
-            x1_pos_emb = self.pos_embedding(x1_pos)
-            x2_pos_emb = self.pos_embedding(x2_pos)
-            Prnn_input_list.append(x1_pos_emb)
-            Hrnn_input_list.append(x2_pos_emb)
-        if self.opt['use_ner']:
-            x1_ner_emb = self.ner_embedding(x1_ner)
-            x2_ner_emb = self.ner_embedding(x2_ner)
-            Prnn_input_list.append(x1_ner_emb)
-            Hrnn_input_list.append(x2_ner_emb)
+
+        # Word embeddings
+        emb = self.embedding if self.training else self.eval_embed
+        x1_emb, x2_emb = emb(x1), emb(x2)
+        # Dropout on embeddings
+        if self.opt['dropout_emb'] > 0:
+            x1_emb = layers.dropout(x1_emb, p=self.opt['dropout_emb'], training=self.training)
+            x2_emb = layers.dropout(x2_emb, p=self.opt['dropout_emb'], training=self.training)
+        Prnn_input_list.append(x1_emb)
+        Hrnn_input_list.append(x2_emb)
+
+        # Contextualized embeddings
+        _, x1_cove = self.CoVe(x1, x1_mask)
+        _, x2_cove = self.CoVe(x2, x2_mask)
+        if self.opt['dropout_emb'] > 0:
+            x1_cove = layers.dropout(x1_cove, p=self.opt['dropout_emb'], training=self.training)
+            x2_cove = layers.dropout(x2_cove, p=self.opt['dropout_emb'], training=self.training)
+        Prnn_input_list.append(x1_cove)
+        Hrnn_input_list.append(x2_cove)
+
+        # POS embeddings
+        x1_pos_emb = self.pos_embedding(x1_pos)
+        x2_pos_emb = self.pos_embedding(x2_pos)
+        Prnn_input_list.append(x1_pos_emb)
+        Hrnn_input_list.append(x2_pos_emb)
+
+        # NER embeddings
+        x1_ner_emb = self.ner_embedding(x1_ner)
+        x2_ner_emb = self.ner_embedding(x2_ner)
+        Prnn_input_list.append(x1_ner_emb)
+        Hrnn_input_list.append(x2_ner_emb)
+
         x1_input = torch.cat(Prnn_input_list, 2)
         x2_input = torch.cat(Hrnn_input_list, 2)
 

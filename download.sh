@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-# Download SNLI
-wget https://nlp.stanford.edu/projects/snli/snli_1.0.zip
-unzip -a snli_1.0.zip
-rm -f snli_1.0.zip
-
 # Download MultiNLI
 wget http://www.nyu.edu/projects/bowman/multinli/multinli_1.0.zip
 unzip -a multinli_1.0.zip

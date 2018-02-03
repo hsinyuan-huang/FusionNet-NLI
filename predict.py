@@ -11,7 +11,6 @@ from datetime import datetime
 from collections import Counter, defaultdict
 import torch
 import msgpack
-import pandas as pd
 import numpy as np
 from FusionModel.model import FusionNet_Model
 from general_utils import BatchGen, load_train_data, load_eval_data

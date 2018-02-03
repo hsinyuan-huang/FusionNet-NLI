@@ -38,18 +38,10 @@ class FusionNet_Model(object):
 
         # Building optimizer.
         parameters = [p for p in self.network.parameters() if p.requires_grad]
-        if opt['optimizer'] == 'sgd':
-            self.optimizer = optim.SGD(parameters, opt['learning_rate'],
-                                       momentum=opt['momentum'],
-                                       weight_decay=opt['weight_decay'])
-        elif opt['optimizer'] == 'adamax':
-            self.optimizer = optim.Adamax(parameters,
-                                          weight_decay=opt['weight_decay'])
+        if opt['optimizer'] == 'adamax':
+            self.optimizer = optim.Adamax(parameters)
         elif opt['optimizer'] == 'adam':
-            self.optimizer = optim.Adam(parameters,
-                                        weight_decay=opt['weight_decay'])
-        elif opt['optimizer'] == 'adadelta':
-            self.optimizer = optim.Adadelta(parameters, rho=0.95)
+            self.optimizer = optim.Adam(parameters)
         else:
             raise RuntimeError('Unsupported optimizer: %s' % opt['optimizer'])
         if state_dict and 'optimizer' in state_dict:

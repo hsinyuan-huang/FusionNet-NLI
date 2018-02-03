@@ -11,7 +11,6 @@ from datetime import datetime
 from collections import Counter, defaultdict
 import torch
 import msgpack
-import pandas as pd
 import numpy as np
 from FusionModel.model import FusionNet_Model
 from general_utils import BatchGen, load_train_data, load_eval_data
@@ -51,11 +50,6 @@ parser.add_argument('-bs', '--batch_size', type=int, default=32)
 parser.add_argument('-op', '--optimizer', default='adamax',
                     help='supported optimizer: adamax, sgd, adadelta, adam')
 parser.add_argument('-gc', '--grad_clipping', type=float, default=10)
-parser.add_argument('-wd', '--weight_decay', type=float, default=0)
-parser.add_argument('-lr', '--learning_rate', type=float, default=0.1,
-                    help='only applied to SGD.')
-parser.add_argument('-mm', '--momentum', type=float, default=0,
-                    help='only applied to SGD.')
 parser.add_argument('-tp', '--tune_partial', type=int, default=1000,
                     help='finetune top-x embeddings (including <PAD>, <UNK>).')
 parser.add_argument('--fix_embeddings', action='store_true',
@@ -69,14 +63,10 @@ parser.add_argument('--enc_rnn_layers', type=int, default=2, help="Encoding RNN 
 parser.add_argument('--inf_rnn_layers', type=int, default=2, help="Inference RNN layers")
 parser.add_argument('--full_att_type', type=int, default=2)
 
-parser.add_argument('--no_wemb', dest='use_wemb', action='store_false') # word embedding
-parser.add_argument('--no_cove', dest='use_cove', action='store_false') # cove embedding
-parser.add_argument('--no_pos', dest='use_pos', action='store_false') # pos tagging
 parser.add_argument('--pos_size', type=int, default=56,
                     help='how many kinds of POS tags.')
 parser.add_argument('--pos_dim', type=int, default=12,
                     help='the embedding dimension for POS tags.')
-parser.add_argument('--no_ner', dest='use_ner', action='store_false') # named entity
 parser.add_argument('--ner_size', type=int, default=19,
                     help='how many kinds of named entity tags.')
 parser.add_argument('--ner_dim', type=int, default=8,
@@ -134,7 +124,6 @@ def main():
 
     best_acc = 0.0
 
-    print("PROGRESS: 00.00%")
     for epoch in range(1, 1 + args.epoches):
         log.warning('Epoch {}'.format(epoch))
 
@@ -187,7 +176,6 @@ def main():
             best_acc = (acc + corr_acc)/2
 
         log.warning("Epoch {0} - dev Acc: {1:.3f}, dev2 Acc: {2:.3f} (best Acc: {3:.3f})".format(epoch, acc, corr_acc, best_acc))
-        print("PROGRESS: {0:.2f}%".format(100.0 * epoch / args.epoches - 1.0))
 
 if __name__ == '__main__':
     main()

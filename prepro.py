@@ -11,9 +11,20 @@ import logging
 import random
 from general_utils import normalize_text, build_embedding, load_glove_vocab, pre_proc, feature_gen, token2id, process_jsonlines
 
+# Fixed Parameters for MultiNLI_1.0
+trn_file = 'multinli_1.0/multinli_1.0_train.jsonl'
+trn_meta_msgpack = 'multinli_1.0/train_meta.msgpack'
+trn_data_msgpack = 'multinli_1.0/train_data.msgpack'
+
+dev_file = 'multinli_1.0/multinli_1.0_dev_mismatched.jsonl'
+dev_msgpack = 'multinli_1.0/dev_mismatch_preprocessed.msgpack'
+
+tst_file = 'multinli_1.0/multinli_1.0_dev_matched.jsonl'
+tst_msgpack = 'multinli_1.0/dev_match_preprocessed.msgpack'
+
 # Parameters
 parser = argparse.ArgumentParser(
-    description='Preprocess the data. (about 10 mins)'
+    description='Preprocess the data.'
 )
 parser.add_argument('--wv_file', default='glove/glove.840B.300d.txt',
                     help='path to word vector file.')
@@ -23,7 +34,6 @@ parser.add_argument('--threads', type=int, default=multiprocessing.cpu_count(),
                     help='number of threads for preprocessing.')
 parser.add_argument('--seed', type=int, default=1023,
                     help='random seed for data shuffling, embedding init, etc.')
-parser.add_argument('--data', default="multinli", help="Available datasets: snli, multinli")
 
 args = parser.parse_args()
 wv_file = args.wv_file
@@ -32,31 +42,6 @@ nlp = spacy.load('en', parser=False)
 
 random.seed(args.seed)
 np.random.seed(args.seed)
-
-if args.data == "snli":
-    # Fixed Parameters for SNLI_1.0
-    trn_file = 'snli_1.0/snli_1.0_train.jsonl'
-    trn_meta_msgpack = 'snli_1.0/train_meta.msgpack'
-    trn_data_msgpack = 'snli_1.0/train_data.msgpack'
-
-    dev_file = 'snli_1.0/snli_1.0_dev.jsonl'
-    dev_msgpack = 'snli_1.0/dev_preprocessed.msgpack'
-
-    tst_file = 'snli_1.0/snli_1.0_test.jsonl'
-    tst_msgpack = 'snli_1.0/test_preprocessed.msgpack'
-elif args.data == "multinli":
-    # Fixed Parameters for MultiNLI_1.0
-    trn_file = 'multinli_1.0/multinli_1.0_train.jsonl'
-    trn_meta_msgpack = 'multinli_1.0/train_meta.msgpack'
-    trn_data_msgpack = 'multinli_1.0/train_data.msgpack'
-
-    dev_file = 'multinli_1.0/multinli_1.0_dev_mismatched.jsonl'
-    dev_msgpack = 'multinli_1.0/dev_mismatch_preprocessed.msgpack'
-
-    tst_file = 'multinli_1.0/multinli_1.0_dev_matched.jsonl'
-    tst_msgpack = 'multinli_1.0/dev_match_preprocessed.msgpack'
-else:
-    raise NotImplementedError('Dataset = %s' % args.data)
 
 #================================================================
 #=========================== GloVe ==============================
