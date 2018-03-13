@@ -126,8 +126,7 @@ class FusionNet_Model(object):
             p.requires_grad = False
         self.eval_embed_transfer = True
 
-        if self.opt['use_cove']:
-            self.network.CoVe.setup_eval_embed(eval_embed)
+        self.network.CoVe.setup_eval_embed(eval_embed)
 
     def update_eval_embed(self):
         # update evaluation embedding to trained embedding
