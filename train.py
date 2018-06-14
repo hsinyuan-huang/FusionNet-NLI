@@ -104,11 +104,6 @@ ch.setLevel(logging.INFO)
 formatter = logging.Formatter(fmt='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S')
 ch.setFormatter(formatter)
 log.addHandler(ch)
-if args.on_philly == False:
-    fh = logging.FileHandler(args.log_file)
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    log.addHandler(fh)
 
 def main():
     log.info('[program starts.]')
