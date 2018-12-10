@@ -98,12 +98,12 @@ trP_ids = token2id(trP_tokens, tr_vocab, unk_id=1)
 trH_ids = token2id(trH_tokens, tr_vocab, unk_id=1)
 
 # tags
-vocab_tag = list(nlp.tagger.tag_names)
+vocab_tag = [''] + list(nlp.tagger.labels)
 trP_tag_ids = token2id(trP_tags, vocab_tag)
 trH_tag_ids = token2id(trH_tags, vocab_tag)
 
 # entities
-vocab_ent = [''] + nlp.entity.cfg[u'actions'][1]
+vocab_ent = list(set([ent for sent in trP_ents+trH_ents for ent in sent]))
 trP_ent_ids = token2id(trP_ents, vocab_ent)
 trH_ent_ids = token2id(trH_ents, vocab_ent)
 
